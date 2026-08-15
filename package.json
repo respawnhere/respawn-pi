@@ -1,0 +1,124 @@
+{
+  "name": "respawn-pi",
+  "version": "0.4.0",
+  "private": true,
+  "description": "A Debian-first Pi coding-agent package for MiniMax, with portable RespawnPack continuity and no Docker dependency.",
+  "license": "AGPL-3.0-or-later",
+  "keywords": [
+    "pi-package",
+    "pi-coding-agent",
+    "minimax",
+    "debian"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "pi": {
+    "extensions": [
+      "./adapters/pi/package/extensions/respawnpack-rollover.ts",
+      "./adapters/pi/package/extensions/agents-runtime/index.ts",
+      "./adapters/pi/package/extensions/mcp-bridge/index.ts",
+      "./adapters/pi/package/extensions/push-guard.ts",
+      "./adapters/pi/package/extensions/secret-scan.ts",
+      "./adapters/pi/package/extensions/shell-guard.ts",
+      "./adapters/pi/package/extensions/worktree-guard.ts",
+      "./adapters/pi/package/extensions/index-guard.ts",
+      "./adapters/pi/package/extensions/context-monitor.ts",
+      "./adapters/pi/package/extensions/injection-scan.ts",
+      "./adapters/pi/package/extensions/session-routing-nudge.ts",
+      "./adapters/pi/package/extensions/precompact-ledger-nudge.ts",
+      "./adapters/pi/package/extensions/stop-savepoint.ts",
+      "./adapters/pi/package/extensions/lockdown.ts",
+      "./adapters/pi/package/extensions/spawn-guard.ts",
+      "./adapters/pi/package/extensions/websearch-freshness.ts",
+      "./adapters/pi/package/extensions/mcp-reaper.ts",
+      "./adapters/pi/package/extensions/docker-session-tag.ts",
+      "./adapters/pi/package/extensions/supply-chain-scan.ts",
+      "./adapters/pi/package/extensions/gate-guard.ts",
+      "./adapters/pi/package/extensions/doc-file-warning.ts",
+      "./adapters/pi/package/extensions/config-protection.ts"
+    ],
+    "skills": [
+      "./adapters/pi/package/skills/build",
+      "./adapters/pi/package/skills/checkup",
+      "./adapters/pi/package/skills/comply",
+      "./adapters/pi/package/skills/debug",
+      "./adapters/pi/package/skills/loadout",
+      "./adapters/pi/package/skills/onboard",
+      "./adapters/pi/package/skills/playtest",
+      "./adapters/pi/package/skills/respawn",
+      "./adapters/pi/package/skills/respawn-rollover",
+      "./adapters/pi/package/skills/review",
+      "./adapters/pi/package/skills/run-goal",
+      "./adapters/pi/package/skills/savepoint",
+      "./adapters/pi/package/skills/secure",
+      "./adapters/pi/package/skills/ship",
+      "./adapters/pi/package/skills/skill-guard",
+      "./adapters/pi/package/skills/walkthrough",
+      "./adapters/pi/package/skills/wordsmith",
+      "./adapters/pi/package/ops/db-ops",
+      "./adapters/pi/package/ops/deploy-verify",
+      "./adapters/pi/package/ops/infra-status",
+      "./adapters/pi/package/ops/secrets-audit",
+      "./adapters/pi/package/ops/mcp/context7",
+      "./adapters/pi/package/ops/mcp/fly",
+      "./adapters/pi/package/ops/mcp/github",
+      "./adapters/pi/package/ops/mcp/graphify",
+      "./adapters/pi/package/ops/mcp/runtime",
+      "./adapters/pi/package/ops/mcp/security-audit",
+      "./adapters/pi/package/ops/mcp/supabase",
+      "./adapters/pi/package/memory/knowledge"
+    ],
+    "prompts": [],
+    "themes": []
+  },
+  "respawnPi": {
+    "canonicalPackage": "root",
+    "nonSymlinkAllowed": false,
+    "v040Status": "Unreleased",
+    "agents": {
+      "surface": "package-owned runtime extension (no global-state dependency)",
+      "directory": "./adapters/pi/package/agents",
+      "loaderExtension": "./adapters/pi/package/extensions/agents-runtime/index.ts",
+      "expectedCount": 32,
+      "deferredClaim": "no global files; no installer-style file copy; the loader reads agents/*.md directly from the package directory"
+    },
+    "skills": {
+      "inventory": "17 source skills + 4 ops skills + 7 ops/mcp bases + 1 memory skill = 29",
+      "deferredClaim": "all 29 are enumerated explicitly so Pi does not have to walk a conventions directory"
+    },
+    "security": "Pi has no built-in sandbox. Use the Debian VM and a non-root account as the execution boundary."
+  },
+  "scripts": {
+    "canary": "node adapters/pi/canaries/canary-all.js --project .",
+    "init:project": "node scripts/init-project.mjs",
+    "uninit:project": "node scripts/uninit-project.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "@earendil-works/pi-agent-core": {
+      "optional": true
+    },
+    "@earendil-works/pi-tui": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  }
+}

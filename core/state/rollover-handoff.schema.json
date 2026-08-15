@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://respawnpack.dev/schemas/rollover-handoff.schema.json",
+  "title": ".respawnpack/runtime/rollover/<host>-<conversationId>/<handoffId>.json — the v0.3 rollover handoff",
+  "description": "Written once and never rewritten by core/state/handoff.js, then verified by a sibling <handoffId>.verified.json receipt and claimed exactly once through a <handoffId>.consumed.json receipt created with `wx`. ⛔ THE DOCUMENT IS IMMUTABLE ON PURPOSE: schemaVersion 1.0.0 (precompact-handoff) was rewritten twice after it was written — once to stamp readBackVerified, once to stamp consumedAt — so the bytes that were verified were never the bytes that were injected and the file's own digest could prove nothing. GITIGNORED, machine-local, and NOT registered in schemas/registry.json: registration happens in W2 alongside the first real writer, because a declared family with no shipped writer is a schema pointing at nothing.",
+  "type": "object",
+  "required": [
+    "schemaVersion", "kind", "handoffId", "writtenAt", "identity", "contextCycleId",
+    "atomicActionId", "exactNextAction", "git", "userConstraints", "verificationEvidence",
+    "unresolvedQuestions", "candidateMemories", "migratedFrom", "source"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": "2.0.0" },
+    "kind": { "const": "rollover-handoff" },
+    "handoffId": { "type": "string", "pattern": "^ho_" },
+    "writtenAt": { "type": "string" },
+    "identity": {
+      "description": "The conversation this handoff belongs to. A host id is unique only WITHIN its host, and the hosts disagree on the field name, so both travel.",
+      "type": "object",
+      "required": ["host", "conversationId", "conversationIdField"],
+      "additionalProperties": false,
+      "properties": {
+        "host": { "enum": ["claude-code", "codex", "pi"] },
+        "conversationId": { "type": "string" },
+        "conversationIdField": {
+          "description": "Which field of the host payload the id was read from — session_id (Claude), threadId (Codex app server), sessionId (Pi). A bare id cannot say where it came from.",
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "contextCycleId": {
+      "description": "host:conversationId:cycleIndex:cycleNonce. REQUIRED: a handoff not bound to a cycle can be re-injected into any of them.",
+      "type": "string"
+    },
+    "atomicActionId": { "type": ["string", "null"] },
+    "exactNextAction": {
+      "description": "Null is legal and meaningful — a migrated v1 record recorded none, and manufacturing one would be reconstructing a conclusion from memory.",
+      "type": ["string", "null"]
+    },
+    "git": {
+      "type": "object",
+      "required": ["head", "uncommittedFiles", "uncommittedTruncated", "sessionDelta"],
+      "additionalProperties": false,
+      "properties": {
+        "head": { "type": ["string", "null"] },
+        "uncommittedFiles": { "type": "array", "maxItems": 60, "items": { "type": "string" } },
+        "uncommittedTruncated": {
+          "description": "Truncation is REPORTED, never silent — a capped list that does not say it was capped reads as complete.",
+          "type": "boolean"
+        },
+        "sessionDelta": {
+          "type": "object",
+          "required": ["status", "files", "headMoved"],
+          "additionalProperties": false,
+          "properties": {
+            "status": { "enum": ["CHANGED", "UNCHANGED", "CANNOT_DETERMINE"] },
+            "files": { "type": "array", "items": { "type": "string" } },
+            "headMoved": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "userConstraints": { "type": "array", "items": { "type": "string" } },
+    "verificationEvidence": {
+      "description": "What this session actually proved, as records rather than as claims. An empty array is a real answer.",
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "unresolvedQuestions": { "type": "array", "items": { "type": "string" } },
+    "candidateMemories": {
+      "description": "IDS ONLY. A candidate memory is an unverified lead; inlining its text here would deliver it into the next cycle looking exactly like the verified facts beside it.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "migratedFrom": { "type": ["string", "null"] },
+    "source": {
+      "type": "object",
+      "required": ["kind", "raw"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["native", "v1-precompact"] },
+        "raw": {
+          "description": "The originating document, VERBATIM, when this handoff was migrated. Deliberately unconstrained: it is another schema's artifact and summarising it would delete the only copy of what that session recorded."
+        }
+      }
+    }
+  }
+}

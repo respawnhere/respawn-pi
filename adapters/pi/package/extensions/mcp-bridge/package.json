@@ -1,0 +1,13 @@
+{
+  "name": "respawn-pi-mcp-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP bridge: discover tools from configured MCP servers and register each as a Pi tool. Ships an MCP client (StdioClientTransport) and a standalone canary.",
+  "license": "AGPL-3.0-or-later",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0"
+  },
+  "pi": {
+    "extensions": ["./index.ts"]
+  }
+}

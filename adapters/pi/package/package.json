@@ -1,0 +1,77 @@
+{
+  "name": "@respawn-pi/rollover",
+  "version": "0.4.0",
+  "private": true,
+  "description": "The Pi extension and manual rollover skill bundled by respawn-pi.",
+  "license": "AGPL-3.0-or-later",
+  "keywords": [
+    "pi-package"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0"
+  },
+  "pi": {
+    "extensions": [
+      "extensions/agents-runtime/index.ts",
+      "extensions/config-protection.ts",
+      "extensions/context-monitor.ts",
+      "extensions/doc-file-warning.ts",
+      "extensions/docker-session-tag.ts",
+      "extensions/gate-guard.ts",
+      "extensions/index-guard.ts",
+      "extensions/injection-scan.ts",
+      "extensions/lockdown.ts",
+      "extensions/mcp-bridge/index.ts",
+      "extensions/mcp-reaper.ts",
+      "extensions/precompact-ledger-nudge.ts",
+      "extensions/push-guard.ts",
+      "extensions/respawnpack-rollover.ts",
+      "extensions/secret-scan.ts",
+      "extensions/session-routing-nudge.ts",
+      "extensions/shell-guard.ts",
+      "extensions/spawn-guard.ts",
+      "extensions/stop-savepoint.ts",
+      "extensions/supply-chain-scan.ts",
+      "extensions/websearch-freshness.ts",
+      "extensions/worktree-guard.ts"
+    ],
+    "skills": [
+      "skills/build",
+      "skills/checkup",
+      "skills/comply",
+      "skills/debug",
+      "skills/loadout",
+      "skills/onboard",
+      "skills/playtest",
+      "skills/respawn",
+      "skills/respawn-rollover",
+      "skills/review",
+      "skills/run-goal",
+      "skills/savepoint",
+      "skills/secure",
+      "skills/ship",
+      "skills/skill-guard",
+      "skills/walkthrough",
+      "skills/wordsmith",
+      "ops/db-ops",
+      "ops/deploy-verify",
+      "ops/infra-status",
+      "ops/secrets-audit",
+      "ops/mcp/context7",
+      "ops/mcp/fly",
+      "ops/mcp/github",
+      "ops/mcp/graphify",
+      "ops/mcp/runtime",
+      "ops/mcp/security-audit",
+      "ops/mcp/supabase",
+      "memory/knowledge"
+    ],
+    "prompts": [],
+    "themes": []
+  },
+  "respawnPi": {
+    "note": "pi-native-package-001 + pi-native-relocate-001 + pi-native-aggregate-001 (B22, B23, R1): the 21 .ts extensions under extensions/ are listed explicitly (Pi's readPiManifest requires an array of strings; convention-dir fallback applies only when the field is absent). The mcp-bridge index is enumerated alongside its peers so Pi's loader resolves and jiti-imports it as a first-class extension rather than relying on a transitive runtime import (the previous claim of transitive import was false; mcp-bridge was silently skipped on clean checkouts). The 17 source skills + 4 ops skills + 7 ops/mcp bases + 1 memory skill seed are listed explicitly so Pi discovers them without relying on fallback. skills: skills/build, checkup, comply, debug, loadout, onboard, playtest, respawn, respawn-rollover, review, run-goal, savepoint, secure, ship, skill-guard, walkthrough, wordsmith (17); ops: db-ops, deploy-verify, infra-status, secrets-audit (4); ops/mcp: context7, fly, github, graphify, runtime, security-audit, supabase (7); memory: knowledge (1). Total 29 skill surfaces. The 32-role agent bench lives alongside under agents/ but is not enumerated in pi.skills (Pi has no agent resource type; agents/*.md are surfaced via a runtime extension rather than as Pi resources).",
+    "bridge": "The standalone root package includes adapters/pi/bridge and core; the extension resolves the bridge relative to its own installed source path.",
+    "security": "Pi has no built-in sandbox. Use the Debian VM and a non-root account as the execution boundary."
+  }
+}

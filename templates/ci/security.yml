@@ -1,0 +1,77 @@
+# RespawnPack — security CI  (installed to .github/workflows/respawnpack-security.yml)
+#
+# WHY THIS EXISTS: the secret-scan hook and the /secure skill run *inside* Claude Code sessions.
+# This workflow runs the same guardrails on EVERY push/PR and on a weekly schedule — so security
+# holds even when no agent is in the loop: a teammate pushes by hand, or a CVE is disclosed days
+# after you shipped a clean build. In-session skills catch it while you work; this catches the rest.
+name: respawnpack-security
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  schedule:
+    # Weekly CVE re-scan — the "scheduled CVE monitoring" pillar. Catches vulnerabilities
+    # disclosed AFTER a clean ship, when nothing in the diff changed but the threat landscape did.
+    - cron: "0 9 * * 1" # Mondays 09:00 UTC
+
+# Least privilege: this workflow only ever reads the repo. No write scopes are granted,
+# so a compromised action step can't push code or mutate releases.
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    # WHY gitleaks: a full-history credential scan — the deep backstop to the push-time
+    # secret-scan hook (which only sees the current diff). History matters: a key committed
+    # and later "removed" is still in the pack and still exposed.
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history — gitleaks must see past commits, not just the tip
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          # gitleaks-action v2 is free for personal-account repos. ORGANIZATION-owned repos must
+          # set a free GITLEAKS_LICENSE (get one at gitleaks.io) as a repo/org secret, or this
+          # step fails at runtime and the secret scan silently does not run.
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITLEAKS_ENABLE_SUMMARY: "true"
+
+  dependency-audit:
+    # WHY: a known-CVE scan of the resolved dependency tree (the SBOM / supply-chain pillar,
+    # re-run weekly for the CVE-monitoring pillar). HIGH severity fails the build so a vulnerable
+    # transitive dep can't slip in unnoticed.
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Audit dependencies (high severity fails the build)
+        # Auto-detects the Node package manager from the lockfile present. For non-Node stacks,
+        # replace/extend this step with your auditor: pip-audit, cargo audit, govulncheck, etc.
+        run: |
+          # pnpm/yarn are preinstalled on GitHub runners; only fall back to corepack if the
+          # binary is missing (corepack is being decoupled from Node and `corepack enable` can
+          # warn/fail on newer images).
+          if [ -f pnpm-lock.yaml ]; then
+            command -v pnpm >/dev/null || corepack enable
+            pnpm audit --audit-level=high
+          elif [ -f yarn.lock ]; then
+            command -v yarn >/dev/null || corepack enable
+            # Yarn v1 (classic) and v2+ (berry) ship different audit CLIs and a bare yarn.lock
+            # doesn't distinguish them, so dispatch on the running version.
+            if yarn --version | grep -q '^1\.'; then
+              yarn audit --level high
+            else
+              yarn npm audit --severity high
+            fi
+          elif [ -f package-lock.json ]; then
+            npm audit --audit-level=high
+          else
+            echo "No Node lockfile found — skipping dependency audit."
+            echo "Add your stack's auditor here (pip-audit / cargo audit / govulncheck)."
+          fi

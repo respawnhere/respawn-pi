@@ -1,0 +1,7 @@
+{
+  "name": "respawn-pi-extensions",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pi extension directory for respawn-pi hooks. Each .ts file is a Pi extension surfaced via the package.json pi.extensions array.",
+  "license": "AGPL-3.0-or-later"
+}

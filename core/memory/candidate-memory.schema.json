@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://respawnpack.dev/schemas/candidate-memory.schema.json",
+  "title": ".respawnpack/runtime/rollover/<host>-<conversationId>/memory/<id>.json — a candidate memory",
+  "description": "Written by core/memory/candidates.js. ⛔ A CANDIDATE IS NOT A FACT. `verificationState` is the wall: only a `verified` record may be promoted to canonical project memory, promotion requires at least one supporting evidence path, and a `candidate` may only ever be recalled as an unverified lead. The record is REWRITTEN as its state changes and the append-only audit.jsonl beside it is the authority for how it got there — the opposite trade from the rollover handoff, whose bytes are the evidence and which is therefore never rewritten. GITIGNORED, machine-local, and NOT registered in schemas/registry.json: registration happens in W5 with the savepoint writer.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "id", "claim", "klass", "provenance", "verificationState", "verification", "rejection", "supersededBy"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": "2.0.0" },
+    "kind": { "const": "candidate-memory" },
+    "id": { "type": "string", "pattern": "^cm_" },
+    "claim": {
+      "description": "The assertion, as captured. A memory with no assertion asserts nothing and cannot be checked.",
+      "type": "string"
+    },
+    "klass": {
+      "description": "Only these four may ever become canonical. Anything else is a note, and notes do not become project truth.",
+      "enum": ["finding", "decision", "constraint", "root-cause-fix"]
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["by", "at", "cycleId", "conversationId", "host", "sourceKind", "evidencePaths"],
+      "additionalProperties": false,
+      "properties": {
+        "by": { "type": ["string", "null"] },
+        "at": { "type": "string" },
+        "cycleId": {
+          "description": "WHICH CONTEXT CYCLE produced it. Required: a memory outlives the cycle that made it, and one that cannot name that cycle cannot be audited against what was known then.",
+          "type": "string"
+        },
+        "conversationId": { "type": ["string", "null"] },
+        "host": { "type": ["string", "null"] },
+        "sourceKind": { "type": ["string", "null"] },
+        "evidencePaths": {
+          "description": "Paths, never conclusions. An empty array is a real answer and is exactly what blocks promotion.",
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "verificationState": { "enum": ["candidate", "verified", "rejected"] },
+    "verification": {
+      "type": ["object", "null"],
+      "required": ["by", "at", "evidencePaths", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "by": { "type": ["string", "null"] },
+        "at": { "type": "string" },
+        "evidencePaths": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+    "rejection": {
+      "type": ["object", "null"],
+      "required": ["by", "at", "reason", "previousState"],
+      "additionalProperties": false,
+      "properties": {
+        "by": { "type": ["string", "null"] },
+        "at": { "type": "string" },
+        "reason": { "type": "string" },
+        "previousState": {
+          "description": "A VERIFIED memory may be rejected later; findings are overturned. The prior state is kept so the audit shows what was believed and for how long.",
+          "enum": ["candidate", "verified", "rejected"]
+        }
+      }
+    },
+    "supersededBy": { "type": ["string", "null"] }
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://respawnpack.dev/schemas/project-config.schema.json",
+  "title": "respawnpack.config.json — the project's own configuration",
+  "description": "Optionally seeded by explicit project initialization, then owned by the target project. additionalProperties is TRUE: target-owned keys are not rejected. The declared properties are surfaces RespawnPi reads. Editing this compiler input intentionally makes generated state stale.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "managedBy": { "type": "string" },
+    "spine": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": { "status": { "enum": ["uninitialized", "onboarding-required", "initialized"] } }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": { "profile": { "enum": ["continuity", "guarded"] } }
+    },
+    "respawnpack": { "type": "string" },
+    "installedAt": { "type": "string" },
+    "upgradedAt": { "type": "string" },
+    "routeSource": { "type": "string" },
+    "opsTargets": {
+      "description": "A MAP of detected infrastructure, not a list — e.g. {host: 'fly', edge: 'cloudflare'}. Each key is a role and each value the provider detected for it, so a project cannot accidentally declare two hosts. ⛔ This was declared as an array until the installed-target release smoke validated a config written by the REAL installer rather than by a fixture; the schema suite's own capture used a hand-made config and could not see it.",
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "codeTruth": { "type": "string" },
+    "extras": { "type": "array" },
+    "note": { "type": "string" },
+    "qualityGate": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "notApplicable": { "type": "boolean" },
+        "reason": { "description": "NOT_APPLICABLE must be DECLARED with a reason — never inferred from finding no checks.", "type": "string" },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": true,
+            "properties": {
+              "name": { "type": "string" }, "root": { "type": "string" },
+              "command": { "type": "string" }, "args": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "removals": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "registry": { "type": "string" },
+            "notApplicable": { "type": "boolean" },
+            "reason": { "type": "string" },
+            "liveContentDirs": {
+              "description": "Zero configured directories is CANNOT_DETERMINE, not a pass — the ValleyExplorerX defect was a live assertion in `story/` passing a docs-only scan.",
+              "type": "array", "items": { "type": "string" }
+            },
+            "extensions": { "type": "array", "items": { "type": "string" } },
+            "historyPaths": { "type": "array", "items": { "type": "string" } },
+            "exclude": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "adapters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "name": { "type": "string" },
+              "command": { "type": "string" },
+              "args": { "type": "array", "items": { "type": "string" } },
+              "critical": { "type": "boolean" },
+              "controls": {
+                "description": "A CRITICAL adapter without discriminating controls has its verdict DISCARDED as CANNOT_DETERMINE.",
+                "type": "object", "additionalProperties": true,
+                "properties": { "good": { "type": "string" }, "bad": { "type": "string" } }
+              },
+              "timeoutMs": { "type": "number" }
+            }
+          }
+        },
+        "reconcile": {
+          "description": "DF-005. The generic pack assumes NO task system: a project declares both sides, or gets NOT_CONFIGURED — which is a real answer and not a failure.",
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "notApplicable": { "type": "boolean" },
+            "reason": { "description": "Required whenever notApplicable is true. An opt-out nobody has to justify is an opt-out nobody reviews.", "type": "string" },
+            "tasks": { "$ref": "#/$defs/reconcileSource" },
+            "project": { "$ref": "#/$defs/reconcileSource" },
+            "openStatuses": { "type": "array", "items": { "type": "string" } },
+            "closedStatuses": { "type": "array", "items": { "type": "string" } },
+            "ignore": {
+              "description": "Declared exclusions. Always REPORTED, never hidden — a silent exclusion is an unaudited one — and an entry with no reason says so in the report.",
+              "type": "array",
+              "items": {
+                "type": "object", "required": ["id"], "additionalProperties": true,
+                "properties": { "id": { "type": "string" }, "reason": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "engine": {
+          "type": "object", "additionalProperties": true,
+          "properties": {
+            "entry": { "type": "string" },
+            "node": { "description": "An installer-resolved ABSOLUTE Node path. Nothing depends on a global `rmem` and nothing mutates PATH (OD-2).", "type": "string" },
+            "installedAt": { "type": "string" },
+            "dependencies": {}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "reconcileSource": {
+      "description": "One side of the DF-005 comparison. `requirements` reads the kernel's own approved denominator, so the common case needs no adapter at all; `json` reads a structured file the project maintains; `adapter` invokes the project's own tool and INTERPRETS its JSON — never reimplements it.",
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": true,
+      "properties": {
+        "kind": { "enum": ["json", "adapter", "requirements"] },
+        "path": { "type": "string" },
+        "pointer": { "description": "A dotted path to the record array. Absent means the document root.", "type": "string" },
+        "command": { "type": "string" },
+        "args": { "type": "array", "items": { "type": "string" } },
+        "timeoutMs": { "type": "number" },
+        "critical": { "type": "boolean" },
+        "controls": {
+          "description": "Required when critical is true. A critical check never shown to answer differently for known-good and known-bad input has its verdict DISCARDED — DF-007 #7 was exactly a check that answered the same for both and was believed.",
+          "type": "object", "required": ["good", "bad"], "additionalProperties": true,
+          "properties": { "good": { "type": "array" }, "bad": { "type": "array" } }
+        }
+      }
+    }
+  }
+}

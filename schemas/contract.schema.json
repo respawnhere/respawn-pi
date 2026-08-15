@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://respawnpack.dev/schemas/contract.schema.json",
+  "title": ".respawnpack/runtime/contract.json — the goal-mode runtime contract",
+  "description": "Written by scripts/goal-contract.mjs (activate / close / bump). Gitignored and machine-local by design: autonomy must never travel in a clone. Distinct from runtime-contract.schema.json (the interaction contract: mode/task/acceptance). This schema covers the GOAL-mode runtime pointer: which goal is active, the current atomic task, cycle count, last progress/checkpoint timestamps, handoff history, session append log. Schema-only validation; the procedural loader in scripts/goal-contract.mjs is the production validator.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "mode",
+    "activeGoalId",
+    "goal",
+    "currentAtomicTask",
+    "startedAt",
+    "cycleCount",
+    "lastProgressAt",
+    "lastCheckpointAt",
+    "handoffs"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "description": "Must match scripts/goal-contract.mjs#CONTRACT_SCHEMA_VERSION (1.0.0). Future schema changes bump this and add a load-bearing-keyword version check to the parser.",
+      "const": "1.0.0"
+    },
+    "mode": {
+      "description": "Always 'goal' for contracts written by this schema. runtime-contract.schema.json covers the outer interaction contract (collaborate/delegate/goal flag).",
+      "const": "goal"
+    },
+    "activeGoalId": {
+      "description": "Active goal ID matching /^G-[A-Za-z0-9_-]+$/, or null after closeGoal(). A non-null value drives the rollover bridge's goal-mode threshold ladder; null means goal-mode is suspended/closed.",
+      "type": ["string", "null"],
+      "pattern": "^G-[A-Za-z0-9_-]+$"
+    },
+    "goal": {
+      "description": "The goal's prose text (a copy of the durable docs/goal.md `goal:` field at activation time). Empty-string enforcement is done by the procedural validator (validateGoal/activateGoal); the schema only constrains the type. (validate.mjs's supported-keyword set does not include minLength, so the constraint that would catch an empty string here would have to be a `pattern` or `enum` — both worse than letting the procedure enforce it.)",
+      "type": "string"
+    },
+    "currentAtomicTask": {
+      "description": "The current cold-startable atomic task the operator is working on. null when the goal has no unmet completion item.",
+      "type": ["string", "null"]
+    },
+    "startedAt": {
+      "description": "ISO 8601 timestamp when the contract was first created. Preserved across same-goal re-activations; reset only on a different-goal activation.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T"
+    },
+    "cycleCount": {
+      "description": "Number of times the session has bumped against this contract. Reset only when activeGoalId changes to a different goalId; preserved on same-goal re-activation and on close → activate.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "lastProgressAt": {
+      "description": "ISO 8601 timestamp of the most recent bumpCycleCount() call. Stamped by stop-savepoint when the session ends in goal mode (per D6/C, distinct from lastCheckpointAt which is stamped by the rollover extension's closeout path).",
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T"
+    },
+    "lastCheckpointAt": {
+      "description": "ISO 8601 timestamp of the most recent rollover-extension closeout in goal mode. null until the first closeout fires (per D6/C, distinct from lastProgressAt which is bumped by stop-savepoint).",
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T"
+    },
+    "handoffs": {
+      "description": "Append-only list of handoff records (handoff-id + path) consumed by the next session. Currently unused by the writer (kept as a future hook point); declared so the schema pin holds the field.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["handoffId", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "handoffId": { "type": "string" },
+          "path": { "type": "string" }
+        }
+      }
+    },
+    "sessions": {
+      "description": "Append-only log of session ids that have bumped the cycle count. Capped at last 32 by bumpCycleCount(). May be absent when the contract is fresh (initRuntimeContract does not seed it).",
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "required": ["sessionId", "at"],
+        "additionalProperties": false,
+        "properties": {
+          "sessionId": { "type": ["string", "null"] },
+          "at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" }
+        }
+      }
+    },
+    "closedAt": {
+      "description": "ISO 8601 timestamp of closeGoal(). Only present after close; absent on a contract that has never been closed (since a re-activate preserves the prior sessions[] but resets activeGoalId, this field is purely a closing record).",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T"
+    }
+  }
+}

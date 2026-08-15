@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://respawnpack.dev/schemas/goal.schema.json",
+  "title": "docs/derived/state/goal.json — the DURABLE goal contract",
+  "description": "Written by kernel/lib/state.js writeGoalDoc() and mutated by kernel/lib/closeout.js. ⛔ THE SPLIT IS BY DURABILITY, NOT BY TOPIC: this file owns the contract (goal text, completion criteria, constraints, authority, forbidden) and is TRACKED, so a fresh clone still carries it; .respawnpack/runtime/contract.json owns which mode is active and is gitignored. An earlier cut had two independent goal representations with nothing reconciling them, which is the exact failure ADR-001 exists to end. additionalProperties is TRUE: this file is also a founder-editable surface (milestone, currentAtomicTask, ownerConfirmations, killedFeatures are read but never written by the pack).",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "goals": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": { "type": "string" },
+          "goal": { "type": "string" },
+          "completion": {
+            "description": "A free-text criterion is legitimate — some things only a human can judge — and evaluates to CANNOT_DETERMINE rather than being ruled on by the program in its own favour.",
+            "type": "array",
+            "items": {
+              "anyOf": [
+                { "type": "string" },
+                {
+                  "type": "object", "additionalProperties": true,
+                  "properties": { "kind": { "type": "string" }, "gate": { "type": "string" }, "text": { "type": "string" } }
+                }
+              ]
+            }
+          },
+          "constraints": { "type": "array", "items": { "type": "string" } },
+          "authority": { "type": "array", "items": { "type": "string" } },
+          "forbidden": { "type": "array", "items": { "type": "string" } },
+          "externalBlockers": { "type": "array", "items": { "type": "string" } },
+          "createdAt": { "type": "string" },
+          "contextStages": {
+            "type": "object", "additionalProperties": false,
+            "properties": { "checkpoint": { "type": "number" }, "closeout": { "type": "number" }, "handoff": { "type": "number" } }
+          },
+          "hostNote": { "type": "string" },
+          "legacyShape": { "const": true },
+          "completedAt": { "type": "string" },
+          "qualifiedRevision": { "type": ["string", "null"] },
+          "completionEvidence": {
+            "description": "Written only by completeGoal(), which REFUSES on an UNMET criterion (exit 1) and on an unevaluable one (exit 2) alike.",
+            "type": "object", "additionalProperties": true,
+            "properties": {
+              "criteria": { "type": "array" },
+              "evidence": { "type": ["string", "null"] },
+              "note": { "type": ["string", "null"] },
+              "sourceManifest": { "type": ["object", "null"] }
+            }
+          }
+        }
+      }
+    },
+    "ongoingGoalId": { "type": ["string", "null"] },
+    "activeGoalId": {
+      "description": "⛔ LEGACY, READ-ONLY. The pre-2d spelling. Readers accept it (state.js, closeout.js, respawnpack.js all try ongoingGoalId first); every writer deletes it. Declared so the tolerance is auditable rather than folklore.",
+      "type": ["string", "null"]
+    },
+    "completedGoalIds": { "type": "array", "items": { "type": "string" } },
+    "goal": {
+      "description": "⛔ LEGACY FLAT SHAPE, READ-ONLY. A pre-`goals` document is normalised into goals['G-legacy'] with legacyShape:true, so an existing project need not migrate before its state compiles.",
+      "type": "string"
+    },
+    "completion": { "type": "array" },
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "authority": { "type": "array", "items": { "type": "string" } },
+    "forbidden": { "type": "array", "items": { "type": "string" } },
+    "externalBlockers": { "type": "array", "items": { "type": "string" } },
+    "milestone": { "type": ["string", "null"] },
+    "milestoneComplete": { "type": "boolean" },
+    "currentAtomicTask": { "type": ["string", "null"] },
+    "ownerConfirmations": {
+      "type": "array",
+      "items": { "type": "object", "additionalProperties": true, "properties": { "criterion": { "type": "string" } } }
+    },
+    "killedFeatures": { "type": "array" }
+  }
+}
